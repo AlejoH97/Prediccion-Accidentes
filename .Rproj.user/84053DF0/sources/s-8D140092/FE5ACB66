@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1560112716321.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "FE5ACB66",
+    "lastKnownWriteTime" : 1705928558096,
+    "last_content_update" : 1560112716321,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "5D3A8C1E",
+        "caption" : "comunaPred",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=comunaPred&cache_key=5D3A8C1E",
+        "displayedObservations" : 7647,
+        "environment" : "",
+        "expression" : "comunaPred",
+        "object" : "comunaPred",
+        "preview" : 0,
+        "totalObservations" : 7647,
+        "variables" : 8
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
