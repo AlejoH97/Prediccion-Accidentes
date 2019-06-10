@@ -51,7 +51,6 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 
 #####################################################################################################################
-
 #Por barrio
 #Cargar datos de barrio
 
@@ -102,9 +101,9 @@ cargarBarrio <- function(){
     return(PorBarrioT)
 }
 #####################################################################################################################
-
 #Por comuna
 #Cargar datos de comuna
+
 cargarComuna <- function(){
     
     t2014 <- read.csv("./data/Accidentalidad_georreferenciada_2014.csv", )
@@ -153,6 +152,7 @@ cargarComuna <- function(){
 }
 
 #####################################################################################################################
+##### ENCONTRAR K ÓPTIMO
 
 mse_k2018<-function(k,data_tr,data_vl,formula_mod){
     adv_knn<-knnreg(formula_mod,data=datos_tr,k=k) 
@@ -165,15 +165,12 @@ mse_k2018<-function(k,data_tr,data_vl,formula_mod){
 
 set.seed(98956561)
 
-diario2018 <- function(datos){
-    p_tr<-0.7
+k_opt <- function(datos, p_tr, modelo){
     N_datos<-dim(datos)[1]
     n_tr<-round(N_datos*p_tr)
     ix_tr<-sample(N_datos,n_tr,replace = FALSE)
     datos_tr<-datos[ix_tr,]
     datos_vl<-datos[-ix_tr,] 
-    
-    modelo <- formula("AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017")
     
     num_vec<-1:1000   
     tryCatch( { MSE <- lapply(num_vec,mse_k2018,data_tr=data_tr,data_vl = data_vl,formula_mod = modelo)}, error = function(e) {an.error.occured <<- TRUE})
@@ -182,16 +179,16 @@ diario2018 <- function(datos){
     mse_vl<-sapply(num_vec,function(x,y){`[[`(y,x)$mse_vl},y=MSE)
     new_k <- which.min(abs(mse_tr-mse_vl))
     
-    
     return(new_k)
 }
 
 #####################################################################################################################
+# Predecir 2018 en base a los demás años
 
-comuna2018 <- function(tipo){
+comuna2018 <- function(tipo, new_k){
     DatosComuna <- cargarComuna()
     
-    adv_knn<-knnreg(AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017,data=DatosComuna,k=99) 
+    adv_knn<-knnreg(AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017,data=DatosComuna,k=new_k) 
     y_tr_pred<-predict(adv_knn,DatosComuna) 
     
     comunaPred <- DatosComuna 
@@ -214,4 +211,41 @@ comuna2018 <- function(tipo){
     return(comunaPred)
 }
 
-tablita <- comuna2018("SEMANA")
+tablita <- comuna2018("SEMANA",99)
+
+#####################################################################################################################
+# Predecir 2018 y 2017 en base a los demás años
+
+comuna2017_2018 <- function(tipo, new_k){
+    DatosComuna <- cargarComuna()
+    
+    adv_knn<-knnreg(AÑO_2017~AÑO_2014+AÑO_2015+AÑO_2016,data=DatosComuna,k=new_k) 
+    y_tr_pred<-predict(adv_knn,DatosComuna) 
+    
+    comunaPred <- DatosComuna 
+    comunaPred["AÑO_2017_PRED"] <- y_tr_pred
+    
+    adv_knn<-knnreg(AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017_PRED,data=comunaPred,k=new_k) 
+    y_tr_pred<-predict(adv_knn,comunaPred) 
+    
+    comunaPred["AÑO_2018_PRED"] <- y_tr_pred
+    
+    comunaPred["FECHA"] <- as.Date(strptime(comunaPred$FECHA,format="%m-%d"), format="%m-%d")
+    
+    if(tipo == "MES"){
+        comunaPred[tipo] <- format(comunaPred$FECHA, format="%m")
+        comunaPred <- group_by(comunaPred, MES, COMUNA)
+        comunaPred <- summarize(comunaPred, AÑO_2017_PRED = sum(AÑO_2017_PRED),AÑO_2018_PRED = sum(AÑO_2018_PRED))
+    }else if(tipo == "SEMANA"){
+        comunaPred["SEMANA"] <- format(comunaPred$FECHA, format="%W")
+        comunaPred <- group_by(comunaPred, SEMANA, COMUNA)
+        comunaPred <- summarize(comunaPred, AÑO_2017_PRED = sum(AÑO_2017_PRED),AÑO_2018_PRED = sum(AÑO_2018_PRED))
+    }else if(tipo == "DIA"){
+        comunaPred <- select(comunaPred,1, 2, 8)
+        comunaPred["FECHA"] <- format(comunaPred$FECHA, format="%m-%d")
+    }
+    return(comunaPred)
+}
+tablita <- comuna2017_2018("MES",99)
+
+#####################################################################################################################
