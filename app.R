@@ -166,7 +166,7 @@ mse_k2018<-function(k,data_tr,data_vl,formula_mod){
 set.seed(98956561)
 
 diario2018 <- function(datos){
-    p_tr<-0.6
+    p_tr<-0.7
     N_datos<-dim(datos)[1]
     n_tr<-round(N_datos*p_tr)
     ix_tr<-sample(N_datos,n_tr,replace = FALSE)
@@ -186,19 +186,32 @@ diario2018 <- function(datos){
     return(new_k)
 }
 
+#####################################################################################################################
 
-adv_knn<-knnreg(AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017,data=DatosComuna,k=99) 
-y_tr_pred<-predict(adv_knn,DatosComuna) 
+comuna2018 <- function(tipo){
+    DatosComuna <- cargarComuna()
+    
+    adv_knn<-knnreg(AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017,data=DatosComuna,k=99) 
+    y_tr_pred<-predict(adv_knn,DatosComuna) 
+    
+    comunaPred <- DatosComuna 
+    comunaPred["AÑO_2018_PRED"] <- y_tr_pred
+    
+    comunaPred["FECHA"] <- as.Date(strptime(comunaPred$FECHA,format="%m-%d"), format="%m-%d")
+    
+    if(tipo == "MES"){
+        comunaPred[tipo] <- format(comunaPred$FECHA, format="%m")
+        comunaPred <- group_by(comunaPred, MES, COMUNA)
+        comunaPred <- summarize(comunaPred, AÑO_2018_PRED = sum(AÑO_2018_PRED))
+    }else if(tipo == "SEMANA"){
+        comunaPred["SEMANA"] <- format(comunaPred$FECHA, format="%W")
+        comunaPred <- group_by(comunaPred, SEMANA, COMUNA)
+        comunaPred <- summarize(comunaPred, AÑO_2018_PRED = sum(AÑO_2018_PRED))
+    }else if(tipo == "DIA"){
+        comunaPred <- select(comunaPred,1, 2, 8)
+        comunaPred["FECHA"] <- format(comunaPred$FECHA, format="%m-%d")
+    }
+    return(comunaPred)
+}
 
-comunaPred <- DatosComuna 
-comunaPred["Año_pred"] <- y_tr_pred
-
-
-
-
-
-####################################################################################################
-
-
-
-
+tablita <- comuna2018("SEMANA")
