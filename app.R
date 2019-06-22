@@ -13,37 +13,49 @@ library(caret)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+    
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
+    titlePanel("Accidentalidad en Medellín"),
+    
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+            radioButtons("grupo", "Selecciona el grupo", list("Comuna","Barrio"),"Comuna"),
+            conditionalPanel(
+                condition = "input.grupo == 'Comuna'",
+                selectInput("selectComuna", "Selecciona una comuna",
+                            unique(cargarComuna()$COMUNA))
+            ),
+            conditionalPanel(
+                condition = "input.grupo == 'Barrio'",
+                selectInput("selectBarrio", "Selecciona un barrio",
+                            unique(cargarBarrio()$BARRIO))
+            ),
+            radioButtons("tipo", "Selecciona el tipo", c("Mes","Semana","Día"),"Mes"),
+            dateInput("fInicio", "Fecha de inicio", value = "2018-01-01" ,min="2018-01-01", max="2018-12-31" ), 
+            dateInput("fFin", "Fecha de fin", value="2018-12-31", min="2018-01-01", max="2018-12-31" ),
+            actionButton("mostrar", "Mostrar")
+            
         ),
-
+        
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot")
+            plotOutput("distPlot")
         )
     )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
+    comunaPred <- comuna2018("MES",99)
+    comunas <- reactive({
+        comunaPred <- comunaPred[(comunaPred$COMUNA == input$selectComuna), ] 
+    })
+    
     output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
+        ggplot(data=comunas(), aes(x=MES, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()
     })
 }
 
@@ -210,9 +222,6 @@ comuna2018 <- function(tipo, new_k){
     }
     return(comunaPred)
 }
-
-tablita <- comuna2018("SEMANA",99)
-
 #####################################################################################################################
 # Predecir 2018 y 2017 en base a los demás años
 
@@ -246,6 +255,4 @@ comuna2017_2018 <- function(tipo, new_k){
     }
     return(comunaPred)
 }
-tablita <- comuna2017_2018("MES",99)
-
 #####################################################################################################################
