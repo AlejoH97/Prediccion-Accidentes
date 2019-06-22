@@ -10,6 +10,7 @@
 library(shiny)
 library(dplyr)
 library(caret)
+library(shinycssloaders)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -33,14 +34,12 @@ ui <- fluidPage(
             ),
             radioButtons("tipo", "Selecciona el tipo", c("Mes","Semana","Día"),"Mes"),
             dateInput("fInicio", "Fecha de inicio", value = "2018-01-01" ,min="2018-01-01", max="2018-12-31" ), 
-            dateInput("fFin", "Fecha de fin", value="2018-12-31", min="2018-01-01", max="2018-12-31" ),
-            actionButton("mostrar", "Mostrar")
-            
+            dateInput("fFin", "Fecha de fin", value="2018-12-31", min="2018-01-01", max="2018-12-31" )
         ),
         
         # Show a plot of the generated distribution
         mainPanel(
-            plotOutput("distPlot")
+            plotOutput("distPlot") %>% withSpinner(color="#0dc5c1")
         )
     )
 )
@@ -50,12 +49,17 @@ server <- function(input, output) {
     comunaPred <- comuna2018("MES",99)
     comunas <- reactive({
         comunaPred <- comunaPred[(comunaPred$COMUNA == input$selectComuna), ] 
+        comunaPred <- na.omit(comunaPred[(comunaPred$MES >= format(input$fInicio, format="%m")),  ])
+        comunaPred <- na.omit(comunaPred[(comunaPred$MES <= format(input$fFin, format="%m")),  ])
     })
     
     output$distPlot <- renderPlot({
         ggplot(data=comunas(), aes(x=MES, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
-            geom_point()
+            geom_point()+
+            ggtitle(input$selectComuna)+
+            xlab("Mes")+
+            ylab("Accidentes")
     })
 }
 
