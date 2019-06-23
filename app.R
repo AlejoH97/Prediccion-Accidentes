@@ -11,10 +11,11 @@ library(shiny)
 library(dplyr)
 library(caret)
 library(shinycssloaders)
+library(lubridate)
+library(shinyWidgets)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-    
     # Application title
     titlePanel("Accidentalidad en Medellín"),
     
@@ -39,13 +40,26 @@ ui <- fluidPage(
         
         # Show a plot of the generated distribution
         mainPanel(
-            plotOutput("distPlot") %>% withSpinner(color="#0dc5c1")
+            conditionalPanel(
+                condition = "(input.tipo == 'Mes') && (input.grupo == 'Comuna')",
+                plotOutput("distPlot") %>% withSpinner(color="#0dc5c1")
+            ),
+            conditionalPanel(
+                condition = "(input.tipo == 'Semana') && (input.grupo == 'Comuna')",
+                plotOutput("distPlotWeek") %>% withSpinner(color="#0dc5c1")
+            ),
+            conditionalPanel(
+                condition = "(input.tipo == 'Día') && (input.grupo == 'Comuna')",
+                plotOutput("distPlotDay") %>% withSpinner(color="#0dc5c1")
+            )
         )
     )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+    
+    #MES
     comunaPred <- comuna2018("MES",99)
     comunas <- reactive({
         comunaPred <- comunaPred[(comunaPred$COMUNA == input$selectComuna), ] 
@@ -60,6 +74,42 @@ server <- function(input, output) {
             ggtitle(input$selectComuna)+
             xlab("Mes")+
             ylab("Accidentes")
+    })
+    
+    #Semana
+    comunaPWeek <- comuna2018("SEMANA",99)
+    comunasWeek <- reactive({
+        comunaPWeek <- comunaPWeek[(comunaPWeek$COMUNA == input$selectComuna), ] 
+        comunaPWeek <- na.omit(comunaPWeek[(comunaPWeek$SEMANA >= format(input$fInicio, format="%W")),  ])
+        comunaPWeek <- na.omit(comunaPWeek[(comunaPWeek$SEMANA <= format(input$fFin, format="%W")),  ])
+    })
+    
+    output$distPlotWeek <- renderPlot({
+        ggplot(data=comunasWeek(), aes(x=SEMANA, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle(input$selectComuna)+
+            xlab("Semana")+
+            ylab("Accidentes")+
+            theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    })
+    
+    #DIA
+    comunaPDay <- comuna2018("DIA",99)
+    comunasPDay <- reactive({
+        comunaPDay <- comunaPDay[(comunaPDay$COMUNA == input$selectComuna), ] 
+        comunaPDay <- na.omit(comunaPDay[(comunaPDay$FECHA >= format(input$fInicio, format="%m-%d")),  ])
+        comunaPDay <- na.omit(comunaPDay[(comunaPDay$FECHA <= format(input$fFin, format="%m-%d")),  ])
+    })
+    
+    output$distPlotDay <- renderPlot({
+        ggplot(data=comunasPDay(), aes(x=FECHA, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle(input$selectComuna)+
+            xlab("Día")+
+            ylab("Accidentes")+
+            theme(axis.text.x = element_text(angle = 90, hjust = 1))
     })
 }
 
@@ -222,6 +272,7 @@ comuna2018 <- function(tipo, new_k){
         comunaPred <- summarize(comunaPred, AÑO_2018_PRED = sum(AÑO_2018_PRED))
     }else if(tipo == "DIA"){
         comunaPred <- select(comunaPred,1, 2, 8)
+        #year(adfadsfa$FECHA) <- 2018
         comunaPred["FECHA"] <- format(comunaPred$FECHA, format="%m-%d")
     }
     return(comunaPred)
