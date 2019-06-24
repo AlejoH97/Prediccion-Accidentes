@@ -42,15 +42,27 @@ ui <- fluidPage(
         mainPanel(
             conditionalPanel(
                 condition = "(input.tipo == 'Mes') && (input.grupo == 'Comuna')",
-                plotOutput("distPlot") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotCMes") %>% withSpinner(color="#0dc5c1")
             ),
             conditionalPanel(
                 condition = "(input.tipo == 'Semana') && (input.grupo == 'Comuna')",
-                plotOutput("distPlotWeek") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotCSemana") %>% withSpinner(color="#0dc5c1")
             ),
             conditionalPanel(
                 condition = "(input.tipo == 'Día') && (input.grupo == 'Comuna')",
-                plotOutput("distPlotDay") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotCDia") %>% withSpinner(color="#0dc5c1")
+            ),
+            conditionalPanel(
+                condition = "(input.tipo == 'Mes') && (input.grupo == 'Barrio')",
+                plotOutput("plotBMes") %>% withSpinner(color="#0dc5c1")
+            ),
+            conditionalPanel(
+                condition = "(input.tipo == 'Semana') && (input.grupo == 'Barrio')",
+                plotOutput("plotBSemana") %>% withSpinner(color="#0dc5c1")
+            ),
+            conditionalPanel(
+                condition = "(input.tipo == 'Día') && (input.grupo == 'Barrio')",
+                plotOutput("plotBDia") %>% withSpinner(color="#0dc5c1")
             )
         )
     )
@@ -58,7 +70,7 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    
+    ###################### Comuna
     #MES
     comunaPred <- comuna2018("MES",99)
     comunas <- reactive({
@@ -67,7 +79,7 @@ server <- function(input, output) {
         comunaPred <- na.omit(comunaPred[(comunaPred$MES <= format(input$fFin, format="%m")),  ])
     })
     
-    output$distPlot <- renderPlot({
+    output$plotCMes <- renderPlot({
         ggplot(data=comunas(), aes(x=MES, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
@@ -84,7 +96,7 @@ server <- function(input, output) {
         comunaPWeek <- na.omit(comunaPWeek[(comunaPWeek$SEMANA <= format(input$fFin, format="%W")),  ])
     })
     
-    output$distPlotWeek <- renderPlot({
+    output$plotCSemana <- renderPlot({
         ggplot(data=comunasWeek(), aes(x=SEMANA, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
@@ -98,18 +110,66 @@ server <- function(input, output) {
     comunaPDay <- comuna2018("DIA",99)
     comunasPDay <- reactive({
         comunaPDay <- comunaPDay[(comunaPDay$COMUNA == input$selectComuna), ] 
-        comunaPDay <- na.omit(comunaPDay[(comunaPDay$FECHA >= format(input$fInicio, format="%m-%d")),  ])
-        comunaPDay <- na.omit(comunaPDay[(comunaPDay$FECHA <= format(input$fFin, format="%m-%d")),  ])
+        comunaPDay <- na.omit(comunaPDay[(comunaPDay$FECHA >= input$fInicio),  ])
+        comunaPDay <- na.omit(comunaPDay[(comunaPDay$FECHA <= input$fFin),  ])
     })
-    
-    output$distPlotDay <- renderPlot({
+    output$plotCDia <- renderPlot({
         ggplot(data=comunasPDay(), aes(x=FECHA, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
             ggtitle(input$selectComuna)+
             xlab("Día")+
+            ylab("Accidentes")
+    })
+    ################# Barrio
+    #MES
+    barrioPred <- barrio2018("MES",99)
+    barrios <- reactive({
+        barrioPred <- barrioPred[(barrioPred$BARRIO == input$selectBarrio), ] 
+        barrioPred <- na.omit(barrioPred[(barrioPred$MES >= format(input$fInicio, format="%m")),  ])
+        barrioPred <- na.omit(barrioPred[(barrioPred$MES <= format(input$fFin, format="%m")),  ])
+    })
+    
+    output$plotBMes <- renderPlot({
+        ggplot(data=barrios(), aes(x=MES, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle(input$selectBarrio)+
+            xlab("Mes")+
+            ylab("Accidentes")
+    })
+    #Semana
+    barrioPWeek <- barrio2018("SEMANA",99)
+    barriosWeek <- reactive({
+        barrioPWeek <- barrioPWeek[(barrioPWeek$BARRIO == input$selectBarrio), ] 
+        barrioPWeek <- na.omit(barrioPWeek[(barrioPWeek$SEMANA >= format(input$fInicio, format="%W")),  ])
+        barrioPWeek <- na.omit(barrioPWeek[(barrioPWeek$SEMANA <= format(input$fFin, format="%W")),  ])
+    })
+    
+    output$plotBSemana <- renderPlot({
+        ggplot(data=barriosWeek(), aes(x=SEMANA, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle(input$selectBarrio)+
+            xlab("Semana")+
             ylab("Accidentes")+
             theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    })
+    
+    #DIA
+    barrioPDay <- barrio2018("DIA",99)
+    barriosPDay <- reactive({
+        barrioPDay <- barrioPDay[(barrioPDay$BARRIO == input$selectBarrio), ] 
+        barrioPDay <- na.omit(barrioPDay[(barrioPDay$FECHA >= input$fInicio),  ])
+        barrioPDay <- na.omit(barrioPDay[(barrioPDay$FECHA <= input$fFin),  ])
+    })
+    output$plotBDia <- renderPlot({
+        ggplot(data=barriosPDay(), aes(x=FECHA, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle(input$selectBarrio)+
+            xlab("Día")+
+            ylab("Accidentes")
     })
 }
 
@@ -160,7 +220,7 @@ cargarBarrio <- function(){
     #Join de tablas
     PorBarrioT <- merge(porBarrio2014, porBarrio2015, by = c("BARRIO","FECHA"), all = TRUE)
     PorBarrioT <- merge(PorBarrioT, porBarrio2016, by = c("BARRIO","FECHA"), all = TRUE)
-    PorBarrioT <- merge(PorBarrioT, porBarrio2017, by = c("BARRIO","FECHA"), all = TRUE)
+    PorBarrioT <- merge(PorBarrioT, porBarrio2017, by = c("BARRIO","FECHA"))
     PorBarrioT <- merge(PorBarrioT, porBarrio2018, by = c("BARRIO","FECHA"))
     PorBarrioT[is.na(PorBarrioT)] <- 0
     
@@ -272,8 +332,8 @@ comuna2018 <- function(tipo, new_k){
         comunaPred <- summarize(comunaPred, AÑO_2018_PRED = sum(AÑO_2018_PRED))
     }else if(tipo == "DIA"){
         comunaPred <- select(comunaPred,1, 2, 8)
-        #year(adfadsfa$FECHA) <- 2018
-        comunaPred["FECHA"] <- format(comunaPred$FECHA, format="%m-%d")
+        year(comunaPred$FECHA) <- 2018
+        #comunaPred["FECHA"] <- format(comunaPred$FECHA, format="%m-%d")
     }
     return(comunaPred)
 }
@@ -311,3 +371,63 @@ comuna2017_2018 <- function(tipo, new_k){
     return(comunaPred)
 }
 #####################################################################################################################
+
+barrio2018 <- function(tipo, new_k){
+    DatosBarrio <- cargarBarrio()
+    
+    adv_knn<-knnreg(AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017,data=DatosBarrio,k=new_k) 
+    y_tr_pred<-predict(adv_knn,DatosBarrio) 
+    
+    barrioPred <- DatosBarrio 
+    barrioPred["AÑO_2018_PRED"] <- y_tr_pred
+    
+    barrioPred["FECHA"] <- as.Date(strptime(barrioPred$FECHA,format="%m-%d"), format="%m-%d")
+    
+    if(tipo == "MES"){
+        barrioPred[tipo] <- format(barrioPred$FECHA, format="%m")
+        barrioPred <- group_by(barrioPred, MES, BARRIO)
+        barrioPred <- summarize(barrioPred, AÑO_2018_PRED = sum(AÑO_2018_PRED))
+    }else if(tipo == "SEMANA"){
+        barrioPred["SEMANA"] <- format(barrioPred$FECHA, format="%W")
+        barrioPred <- group_by(barrioPred, SEMANA, BARRIO)
+        barrioPred <- summarize(barrioPred, AÑO_2018_PRED = sum(AÑO_2018_PRED))
+    }else if(tipo == "DIA"){
+        barrioPred <- select(barrioPred,1, 2, 8)
+        year(barrioPred$FECHA) <- 2018
+        #barrioPred["FECHA"] <- format(barrioPred$FECHA, format="%m-%d")
+    }
+    return(barrioPred)
+}
+
+#####################################################################################################################
+
+barrio2017_2018 <- function(tipo, new_k){
+    DatosBarrio <- cargarBarrio()
+    
+    adv_knn<-knnreg(AÑO_2017~AÑO_2014+AÑO_2015+AÑO_2016,data=DatosBarrio,k=new_k) 
+    y_tr_pred<-predict(adv_knn,DatosBarrio) 
+    
+    barrioPred <- DatosBarrio 
+    barrioPred["AÑO_2017_PRED"] <- y_tr_pred
+    
+    adv_knn<-knnreg(AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017_PRED,data=barrioPred,k=new_k) 
+    y_tr_pred<-predict(adv_knn,barrioPred) 
+    
+    barrioPred["AÑO_2018_PRED"] <- y_tr_pred
+    
+    barrioPred["FECHA"] <- as.Date(strptime(barrioPred$FECHA,format="%m-%d"), format="%m-%d")
+    
+    if(tipo == "MES"){
+        barrioPred[tipo] <- format(barrioPred$FECHA, format="%m")
+        barrioPred <- group_by(barrioPred, MES, COMUNA)
+        barrioPred <- summarize(barrioPred, AÑO_2017_PRED = sum(AÑO_2017_PRED),AÑO_2018_PRED = sum(AÑO_2018_PRED))
+    }else if(tipo == "SEMANA"){
+        barrioPred["SEMANA"] <- format(barrioPred$FECHA, format="%W")
+        barrioPred <- group_by(barrioPred, SEMANA, COMUNA)
+        barrioPred <- summarize(barrioPred, AÑO_2017_PRED = sum(AÑO_2017_PRED),AÑO_2018_PRED = sum(AÑO_2018_PRED))
+    }else if(tipo == "DIA"){
+        barrioPred <- select(barrioPred,1, 2, 8)
+        barrioPred["FECHA"] <- format(barrioPred$FECHA, format="%m-%d")
+    }
+    return(barrioPred)
+}
