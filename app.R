@@ -72,7 +72,8 @@ ui <- fluidPage(
 server <- function(input, output) {
     ###################### Comuna
     #MES
-    comunaPred <- comuna2018("MES",99)
+    comunaPred <- read.csv("./data/comunaMes.csv", colClasses=c("MES"="character"))
+    #comunaPred <- comuna2018("MES",99)
     comunas <- reactive({
         comunaPred <- comunaPred[(comunaPred$COMUNA == input$selectComuna), ] 
         comunaPred <- na.omit(comunaPred[(comunaPred$MES >= format(input$fInicio, format="%m")),  ])
@@ -89,7 +90,8 @@ server <- function(input, output) {
     })
     
     #Semana
-    comunaPWeek <- comuna2018("SEMANA",99)
+    comunaPWeek <- read.csv("./data/comunaSemana.csv", colClasses=c("SEMANA"="character"))
+    #comunaPWeek <- comuna2018("SEMANA",99)
     comunasWeek <- reactive({
         comunaPWeek <- comunaPWeek[(comunaPWeek$COMUNA == input$selectComuna), ] 
         comunaPWeek <- na.omit(comunaPWeek[(comunaPWeek$SEMANA >= format(input$fInicio, format="%W")),  ])
@@ -107,7 +109,8 @@ server <- function(input, output) {
     })
     
     #DIA
-    comunaPDay <- comuna2018("DIA",99)
+    comunaPDay <- read.csv("./data/comunaDia.csv", colClasses=c("FECHA"="Date"))
+    #comunaPDay <- comuna2018("DIA",99)
     comunasPDay <- reactive({
         comunaPDay <- comunaPDay[(comunaPDay$COMUNA == input$selectComuna), ] 
         comunaPDay <- na.omit(comunaPDay[(comunaPDay$FECHA >= input$fInicio),  ])
@@ -123,7 +126,8 @@ server <- function(input, output) {
     })
     ################# Barrio
     #MES
-    barrioPred <- barrio2018("MES",99)
+    barrioPred <- read.csv("./data/barrioMes.csv", colClasses=c("MES"="character"))
+    #barrioPred <- barrio2018("MES",99)
     barrios <- reactive({
         barrioPred <- barrioPred[(barrioPred$BARRIO == input$selectBarrio), ] 
         barrioPred <- na.omit(barrioPred[(barrioPred$MES >= format(input$fInicio, format="%m")),  ])
@@ -139,7 +143,8 @@ server <- function(input, output) {
             ylab("Accidentes")
     })
     #Semana
-    barrioPWeek <- barrio2018("SEMANA",99)
+    barrioPWeek <- read.csv("./data/barrioSemana.csv", colClasses=c("SEMANA"="character"))
+    #barrioPWeek <- barrio2018("SEMANA",99)
     barriosWeek <- reactive({
         barrioPWeek <- barrioPWeek[(barrioPWeek$BARRIO == input$selectBarrio), ] 
         barrioPWeek <- na.omit(barrioPWeek[(barrioPWeek$SEMANA >= format(input$fInicio, format="%W")),  ])
@@ -157,7 +162,8 @@ server <- function(input, output) {
     })
     
     #DIA
-    barrioPDay <- barrio2018("DIA",99)
+    barrioPDay <- read.csv("./data/barrioDia.csv", colClasses=c("FECHA"="Date"))
+    #barrioPDay <- barrio2018("DIA",99)
     barriosPDay <- reactive({
         barrioPDay <- barrioPDay[(barrioPDay$BARRIO == input$selectBarrio), ] 
         barrioPDay <- na.omit(barrioPDay[(barrioPDay$FECHA >= input$fInicio),  ])
@@ -333,7 +339,6 @@ comuna2018 <- function(tipo, new_k){
     }else if(tipo == "DIA"){
         comunaPred <- select(comunaPred,1, 2, 8)
         year(comunaPred$FECHA) <- 2018
-        #comunaPred["FECHA"] <- format(comunaPred$FECHA, format="%m-%d")
     }
     return(comunaPred)
 }
@@ -365,8 +370,8 @@ comuna2017_2018 <- function(tipo, new_k){
         comunaPred <- group_by(comunaPred, SEMANA, COMUNA)
         comunaPred <- summarize(comunaPred, AÑO_2017_PRED = sum(AÑO_2017_PRED),AÑO_2018_PRED = sum(AÑO_2018_PRED))
     }else if(tipo == "DIA"){
-        comunaPred <- select(comunaPred,1, 2, 8)
-        comunaPred["FECHA"] <- format(comunaPred$FECHA, format="%m-%d")
+        comunaPred <- select(comunaPred,1, 2, 8, 9)
+        year(comunaPred$FECHA) <- 2018
     }
     return(comunaPred)
 }
@@ -394,7 +399,6 @@ barrio2018 <- function(tipo, new_k){
     }else if(tipo == "DIA"){
         barrioPred <- select(barrioPred,1, 2, 8)
         year(barrioPred$FECHA) <- 2018
-        #barrioPred["FECHA"] <- format(barrioPred$FECHA, format="%m-%d")
     }
     return(barrioPred)
 }
@@ -419,15 +423,30 @@ barrio2017_2018 <- function(tipo, new_k){
     
     if(tipo == "MES"){
         barrioPred[tipo] <- format(barrioPred$FECHA, format="%m")
-        barrioPred <- group_by(barrioPred, MES, COMUNA)
+        barrioPred <- group_by(barrioPred, MES, BARRIO)
         barrioPred <- summarize(barrioPred, AÑO_2017_PRED = sum(AÑO_2017_PRED),AÑO_2018_PRED = sum(AÑO_2018_PRED))
     }else if(tipo == "SEMANA"){
         barrioPred["SEMANA"] <- format(barrioPred$FECHA, format="%W")
-        barrioPred <- group_by(barrioPred, SEMANA, COMUNA)
+        barrioPred <- group_by(barrioPred, SEMANA, BARRIO)
         barrioPred <- summarize(barrioPred, AÑO_2017_PRED = sum(AÑO_2017_PRED),AÑO_2018_PRED = sum(AÑO_2018_PRED))
     }else if(tipo == "DIA"){
-        barrioPred <- select(barrioPred,1, 2, 8)
-        barrioPred["FECHA"] <- format(barrioPred$FECHA, format="%m-%d")
+        barrioPred <- select(barrioPred,1, 2, 8, 9)
+        year(barrioPred$FECHA) <- 2018
     }
     return(barrioPred)
 }
+
+mse <- function(datos, k, formu){
+
+    N_datos<-dim(datos)[1]
+    n_tr<-round(N_datos*0.7)
+    ix_tr<-sample(N_datos,n_tr,replace = FALSE)
+    datos_tr<-datos[ix_tr,]
+    datos_vl<-datos[-ix_tr,] 
+    
+    ms <- mse_k2018(k,datos_tr,datos_vl, formu)
+    return(ms)
+}
+
+#mse(cargarComuna(),99,AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017)
+#mse(cargarBarrio(),99,AÑO_2018~AÑO_2014+AÑO_2015+AÑO_2016+AÑO_2017)
