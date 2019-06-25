@@ -42,27 +42,33 @@ ui <- fluidPage(
         mainPanel(
             conditionalPanel(
                 condition = "(input.tipo == 'Mes') && (input.grupo == 'Comuna')",
-                plotOutput("plotCMes") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotCMes") %>% withSpinner(color="#0dc5c1"),
+                plotOutput("plotCMes2") %>% withSpinner(color="#0dc5c1")
             ),
             conditionalPanel(
                 condition = "(input.tipo == 'Semana') && (input.grupo == 'Comuna')",
-                plotOutput("plotCSemana") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotCSemana") %>% withSpinner(color="#0dc5c1"),
+                plotOutput("plotCSemana2") %>% withSpinner(color="#0dc5c1")
             ),
             conditionalPanel(
                 condition = "(input.tipo == 'Día') && (input.grupo == 'Comuna')",
-                plotOutput("plotCDia") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotCDia") %>% withSpinner(color="#0dc5c1"),
+                plotOutput("plotCDia2") %>% withSpinner(color="#0dc5c1")
             ),
             conditionalPanel(
                 condition = "(input.tipo == 'Mes') && (input.grupo == 'Barrio')",
-                plotOutput("plotBMes") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotBMes") %>% withSpinner(color="#0dc5c1"),
+                plotOutput("plotBMes2") %>% withSpinner(color="#0dc5c1")
             ),
             conditionalPanel(
                 condition = "(input.tipo == 'Semana') && (input.grupo == 'Barrio')",
-                plotOutput("plotBSemana") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotBSemana") %>% withSpinner(color="#0dc5c1"),
+                plotOutput("plotBSemana2") %>% withSpinner(color="#0dc5c1")
             ),
             conditionalPanel(
                 condition = "(input.tipo == 'Día') && (input.grupo == 'Barrio')",
-                plotOutput("plotBDia") %>% withSpinner(color="#0dc5c1")
+                plotOutput("plotBDia") %>% withSpinner(color="#0dc5c1"),
+                plotOutput("plotBDia2") %>% withSpinner(color="#0dc5c1")
             )
         )
     )
@@ -84,7 +90,7 @@ server <- function(input, output) {
         ggplot(data=comunas(), aes(x=MES, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
-            ggtitle(input$selectComuna)+
+            ggtitle("Modelo 2018")+
             xlab("Mes")+
             ylab("Accidentes")
     })
@@ -102,7 +108,7 @@ server <- function(input, output) {
         ggplot(data=comunasWeek(), aes(x=SEMANA, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
-            ggtitle(input$selectComuna)+
+            ggtitle("Modelo 2018")+
             xlab("Semana")+
             ylab("Accidentes")+
             theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -120,7 +126,7 @@ server <- function(input, output) {
         ggplot(data=comunasPDay(), aes(x=FECHA, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
-            ggtitle(input$selectComuna)+
+            ggtitle("Modelo 2018")+
             xlab("Día")+
             ylab("Accidentes")
     })
@@ -138,7 +144,7 @@ server <- function(input, output) {
         ggplot(data=barrios(), aes(x=MES, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
-            ggtitle(input$selectBarrio)+
+            ggtitle("Modelo 2018")+
             xlab("Mes")+
             ylab("Accidentes")
     })
@@ -155,7 +161,7 @@ server <- function(input, output) {
         ggplot(data=barriosWeek(), aes(x=SEMANA, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
-            ggtitle(input$selectBarrio)+
+            ggtitle("Modelo 2018")+
             xlab("Semana")+
             ylab("Accidentes")+
             theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -173,10 +179,120 @@ server <- function(input, output) {
         ggplot(data=barriosPDay(), aes(x=FECHA, y=AÑO_2018_PRED, group=1)) +
             geom_line()+
             geom_point()+
-            ggtitle(input$selectBarrio)+
+            ggtitle("Modelo 2018")+
             xlab("Día")+
             ylab("Accidentes")
     })
+    ################################################################################################
+    #### 2017-2018
+    ###################### Comuna
+    #MES
+    comunaPred2 <- read.csv("./data/comunaMes2.csv", colClasses=c("MES"="character"))
+    #comunaPred2 <- comuna2018("MES",99)
+    comunas2 <- reactive({
+        comunaPred2 <- comunaPred2[(comunaPred2$COMUNA == input$selectComuna), ] 
+        comunaPred2 <- na.omit(comunaPred2[(comunaPred2$MES >= format(input$fInicio, format="%m")),  ])
+        comunaPred2 <- na.omit(comunaPred2[(comunaPred2$MES <= format(input$fFin, format="%m")),  ])
+    })
+    
+    output$plotCMes2 <- renderPlot({
+        ggplot(data=comunas2(), aes(x=MES, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle("Modelo 2017 - 2018")+
+            xlab("Mes")+
+            ylab("Accidentes")
+    })
+    
+    #Semana
+    comunaPWeek2 <- read.csv("./data/comunaSemana2.csv", colClasses=c("SEMANA"="character"))
+    #comunaPWeek2 <- comuna2018("SEMANA",99)
+    comunasWeek2 <- reactive({
+        comunaPWeek2 <- comunaPWeek2[(comunaPWeek2$COMUNA == input$selectComuna), ] 
+        comunaPWeek2 <- na.omit(comunaPWeek2[(comunaPWeek2$SEMANA >= format(input$fInicio, format="%W")),  ])
+        comunaPWeek2 <- na.omit(comunaPWeek2[(comunaPWeek2$SEMANA <= format(input$fFin, format="%W")),  ])
+    })
+    
+    output$plotCSemana2 <- renderPlot({
+        ggplot(data=comunasWeek2(), aes(x=SEMANA, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle("Modelo 2017 - 2018")+
+            xlab("Semana")+
+            ylab("Accidentes")+
+            theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    })
+    
+    #DIA
+    comunaPDay2 <- read.csv("./data/comunaDia2.csv", colClasses=c("FECHA"="Date"))
+    #comunaPDay2 <- comuna2018("DIA",99)
+    comunasPDay2 <- reactive({
+        comunaPDay2 <- comunaPDay2[(comunaPDay2$COMUNA == input$selectComuna), ] 
+        comunaPDay2 <- na.omit(comunaPDay2[(comunaPDay2$FECHA >= input$fInicio),  ])
+        comunaPDay2 <- na.omit(comunaPDay2[(comunaPDay2$FECHA <= input$fFin),  ])
+    })
+    output$plotCDia2 <- renderPlot({
+        ggplot(data=comunasPDay2(), aes(x=FECHA, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle("Modelo 2017 - 2018")+
+            xlab("Día")+
+            ylab("Accidentes")
+    })
+    ################# Barrio
+    #MES
+    barrioPred2 <- read.csv("./data/barrioMes2.csv", colClasses=c("MES"="character"))
+    #barrioPred2 <- barrio2018("MES",99)
+    barrios2 <- reactive({
+        barrioPred2 <- barrioPred2[(barrioPred2$BARRIO == input$selectBarrio), ] 
+        barrioPred2 <- na.omit(barrioPred2[(barrioPred2$MES >= format(input$fInicio, format="%m")),  ])
+        barrioPred2 <- na.omit(barrioPred2[(barrioPred2$MES <= format(input$fFin, format="%m")),  ])
+    })
+    
+    output$plotBMes2 <- renderPlot({
+        ggplot(data=barrios2(), aes(x=MES, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle("Modelo 2017 - 2018")+
+            xlab("Mes")+
+            ylab("Accidentes")
+    })
+    #Semana
+    barrioPWeek2 <- read.csv("./data/barrioSemana2.csv", colClasses=c("SEMANA"="character"))
+    #barrioPWeek2 <- barrio2018("SEMANA",99)
+    barriosWeek2 <- reactive({
+        barrioPWeek2 <- barrioPWeek2[(barrioPWeek2$BARRIO == input$selectBarrio), ] 
+        barrioPWeek2 <- na.omit(barrioPWeek2[(barrioPWeek2$SEMANA >= format(input$fInicio, format="%W")),  ])
+        barrioPWeek2 <- na.omit(barrioPWeek2[(barrioPWeek2$SEMANA <= format(input$fFin, format="%W")),  ])
+    })
+    
+    output$plotBSemana2 <- renderPlot({
+        ggplot(data=barriosWeek2(), aes(x=SEMANA, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle("Modelo 2017 - 2018")+
+            xlab("Semana")+
+            ylab("Accidentes")+
+            theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    })
+    
+    #DIA
+    barrioPDay2 <- read.csv("./data/barrioDia2.csv", colClasses=c("FECHA"="Date"))
+    #barrioPDay2 <- barrio2018("DIA",99)
+    barriosPDay2 <- reactive({
+        barrioPDay2 <- barrioPDay2[(barrioPDay2$BARRIO == input$selectBarrio), ] 
+        barrioPDay2 <- na.omit(barrioPDay2[(barrioPDay2$FECHA >= input$fInicio),  ])
+        barrioPDay2 <- na.omit(barrioPDay2[(barrioPDay2$FECHA <= input$fFin),  ])
+    })
+    output$plotBDia2 <- renderPlot({
+        ggplot(data=barriosPDay2(), aes(x=FECHA, y=AÑO_2018_PRED, group=1)) +
+            geom_line()+
+            geom_point()+
+            ggtitle("Modelo 2017 - 2018")+
+            xlab("Día")+
+            ylab("Accidentes")
+    })
+    
 }
 
 # Run the application 
